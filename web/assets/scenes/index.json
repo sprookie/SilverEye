@@ -1,0 +1,167 @@
+{
+ "studio-portrait": {
+  "file": "studio-portrait.jpg",
+  "seed": 1900562708,
+  "prompt": "studio portrait of a young woman with expressive eyes and natural makeup, seated against a seamless mid-grey backdrop, calm confident gaze straight into the lens, visible skin texture and fine facial detail"
+ },
+ "street-portrait": {
+  "file": "street-portrait.jpg",
+  "seed": 1383148058,
+  "prompt": "environmental street portrait of a man in a worn leather jacket leaning against a weathered brick wall, candid natural expression, late afternoon light raking across his face, shallow depth separating him from a busy street"
+ },
+ "wedding": {
+  "file": "wedding.jpg",
+  "seed": 797037487,
+  "prompt": "wedding photograph of a bride and groom in a sunlit garden, the bride laughing mid-turn in her white lace dress, backlit rim light through the veil, dreamy romantic atmosphere"
+ },
+ "child": {
+  "file": "child.jpg",
+  "seed": 2045410522,
+  "prompt": "candid photograph of a small child running through tall grass laughing, arms outstretched, sunlit dust motes in the air, unposed joyful energy"
+ },
+ "dancer": {
+  "file": "dancer.jpg",
+  "seed": 949665420,
+  "prompt": "photograph of a contemporary dancer mid-leap on a dark stage, body arched in a sculptural pose, dramatic single spotlight from above, dust and chalk powder suspended in the light beam"
+ },
+ "elder": {
+  "file": "elder.jpg",
+  "seed": 1773303877,
+  "prompt": "intimate portrait of an elderly craftsman with deeply lined hands and weathered face, looking down at his work, soft window light from the side, every wrinkle and pore rendered with dignity"
+ },
+ "mountain-sunrise": {
+  "file": "mountain-sunrise.jpg",
+  "seed": 1464374425,
+  "prompt": "wide landscape of jagged snow-capped mountain peaks at sunrise, valley filled with a sea of low clouds, first pink-orange light striking the summits, sky in soft gradient from amber to deep blue"
+ },
+ "seaside": {
+  "file": "seaside.jpg",
+  "seed": 916628346,
+  "prompt": "rocky coastline with black volcanic boulders at sunset, waves washing over dark wet rocks, dramatic orange and purple sky, sea spray suspended in the air"
+ },
+ "waterfall": {
+  "file": "waterfall.jpg",
+  "seed": 1848305962,
+  "prompt": "a tall waterfall cascading over moss-covered basalt cliffs deep in a green gorge, water crashing into a turquoise pool below, fine mist filling the air, ferns clinging to the rock walls"
+ },
+ "misty-forest": {
+  "file": "misty-forest.jpg",
+  "seed": 870902207,
+  "prompt": "a forest path disappearing into thick morning fog between immense mossy tree trunks, shafts of pale light cutting through the mist, dew on spiderwebs, deep quiet atmosphere"
+ },
+ "desert": {
+  "file": "desert.jpg",
+  "seed": 1475100040,
+  "prompt": "abstract sand dunes in late afternoon, one sharp sinuous ridge curving across the frame, wind-blown sand streaming off the crest, razor-sharp light-shadow boundary, minimalist composition"
+ },
+ "snowfield": {
+  "file": "snowfield.jpg",
+  "seed": 1329682460,
+  "prompt": "a lone figure walking across an endless snowfield under a brilliant blue sky, footprint trail leading into the distance, blinding white expanse with deep blue shadows in the drifts"
+ },
+ "neon-night": {
+  "file": "neon-night.jpg",
+  "seed": 1785522487,
+  "prompt": "rain-soaked city street at night, walls of glowing neon signs in Japanese and Chinese reflecting in the wet asphalt, pedestrians with umbrellas silhouetted against the light, steam rising from a vent"
+ },
+ "starscape": {
+  "file": "starscape.jpg",
+  "seed": 1628432479,
+  "prompt": "the Milky Way arching across a pitch-black desert night sky, thousands of stars, silhouetted rock formations in the foreground, faint airglow on the horizon"
+ },
+ "light-trails": {
+  "file": "light-trails.jpg",
+  "seed": 724718312,
+  "prompt": "a city overpass at night from above, headlights and taillights streaming into long continuous ribbons of red and white light, static city skyline sharp behind the light trails"
+ },
+ "fairground": {
+  "file": "fairground.jpg",
+  "seed": 1916450005,
+  "prompt": "a ferris wheel and carousel spinning at night, their lights blurred into concentric circles of colour, a child watching in silhouette, candy-coloured glow on the fairground floor"
+ },
+ "concert": {
+  "file": "concert.jpg",
+  "seed": 1370405755,
+  "prompt": "a rock band performing on stage, singer leaning into the microphone drenched in sweat, hard backlit spotlights cutting through haze, silhouetted audience with raised hands in the foreground"
+ },
+ "architecture": {
+  "file": "architecture.jpg",
+  "seed": 1498236046,
+  "prompt": "a brutalist concrete building photographed against a clear sky, strong repeating geometric grid of windows, converging vertical lines, harsh midday shadow dividing the facade into light and dark planes"
+ },
+ "interior": {
+  "file": "interior.jpg",
+  "seed": 948790943,
+  "prompt": "the interior of a minimalist modern house, floor-to-ceiling windows pouring daylight across a polished concrete floor, a single chair and a long shadow, calm architectural composition"
+ },
+ "old-town": {
+  "file": "old-town.jpg",
+  "seed": 1688324967,
+  "prompt": "a narrow ancient Chinese water-town alley at dusk, wet flagstones reflecting warm lantern light, whitewashed walls and dark tiled eaves, a lone cyclist turning a corner"
+ },
+ "street-doc": {
+  "file": "street-doc.jpg",
+  "seed": 1479012637,
+  "prompt": "a decisive-moment street photograph, a man stepping over a puddle mid-stride, his reflection perfect in the still water, layered pedestrians and signage behind him, complex urban choreography"
+ },
+ "market": {
+  "file": "market.jpg",
+  "seed": 1627141833,
+  "prompt": "a bustling morning market in an old Asian city, a vendor weighing vegetables on a brass scale under a bare bulb, steam and smoke, hands and produce filling the frame with life"
+ },
+ "train": {
+  "file": "train.jpg",
+  "seed": 910087896,
+  "prompt": "a freight train thundering through a rural valley, exhaust and dust swirling, long lens compressing the carriages into a solid wall of steel, distant hills layered behind"
+ },
+ "sport-cycle": {
+  "file": "sport-cycle.jpg",
+  "seed": 805058798,
+  "prompt": "a road cyclist sprinting out of the saddle, muscle definition and tendons straining, water bottle rattling, sweat spray, motion implied by the body position"
+ },
+ "sport-field": {
+  "file": "sport-field.jpg",
+  "seed": 976851743,
+  "prompt": "a long jumper at the exact instant of takeoff, sand exploding behind her heel, body fully extended, stadium crowd blurred into colour behind"
+ },
+ "wildlife": {
+  "file": "wildlife.jpg",
+  "seed": 458986218,
+  "prompt": "a red fox pausing mid-step in a frost-covered meadow, ears pricked, breath steaming in the cold air, fur detail sharp, background melting into golden bokeh"
+ },
+ "bird-flight": {
+  "file": "bird-flight.jpg",
+  "seed": 932417232,
+  "prompt": "a kingfisher diving toward the water, wings swept back in a streamline, droplet trail behind it, water surface moments before impact"
+ },
+ "flower-macro": {
+  "file": "flower-macro.jpg",
+  "seed": 719779835,
+  "prompt": "macro photograph of a dew-covered spiderweb strung between lavender stems, each droplet a tiny refracting lens, background dissolved into pure soft colour"
+ },
+ "insect-macro": {
+  "file": "insect-macro.jpg",
+  "seed": 262222597,
+  "prompt": "an extreme close-up of a jumping spider on a leaf edge, every hair and each of its eight eyes in razor detail, iridescent chelicerae catching the light"
+ },
+ "still-life": {
+  "file": "still-life.jpg",
+  "seed": 1053684399,
+  "prompt": "still life of a half-peeled orange, a chipped ceramic bowl and a tarnished silver spoon on dark linen, single soft window light from the left, deep shadow falling to the right"
+ },
+ "food": {
+  "file": "food.jpg",
+  "seed": 740028458,
+  "prompt": "overhead food photograph of a steaming bowl of hand-pulled noodles, scattered spring onions and chili oil swirls, chopsticks lifting one strand, moody dark wood table"
+ },
+ "cafe-window": {
+  "file": "cafe-window.jpg",
+  "seed": 641475767,
+  "prompt": "a barista pouring latte art into a cup on a worn wooden counter, steam curling into a shaft of morning light from the window, dust motes and warm backlit haze"
+ },
+ "car-night": {
+  "file": "car-night.jpg",
+  "seed": 984816949,
+  "prompt": "a classic sports car parked under a sodium streetlamp on a wet road at night, paintwork reflecting the lights, faint mist, cinematic stillness"
+ }
+}

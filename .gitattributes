@@ -1,0 +1,17 @@
+# 统一换行符：源码用 LF，Windows 批处理用 CRLF，二进制不做转换
+* text=auto eol=lf
+*.bat text eol=crlf
+*.cmd text eol=crlf
+
+# 图片 / 二进制
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.webp binary
+*.ico binary
+*.pdf binary
+
+# Git 语言统计时把生成资源排除掉，免得语言构成被图片淹没
+web/assets/** linguist-generated=true
+docs/** linguist-documentation=true

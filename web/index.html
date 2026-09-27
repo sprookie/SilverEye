@@ -1,0 +1,475 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>SilverEye · 沉浸式摄影模拟器</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Ccircle cx='16' cy='16' r='14' fill='none' stroke='%23ffb43d' stroke-width='2'/%3E%3Ccircle cx='16' cy='16' r='6' fill='%23ffb43d'/%3E%3C/svg%3E" />
+<link rel="stylesheet" href="/css/base.css" />
+<link rel="stylesheet" href="/css/camera.css" />
+</head>
+<body>
+
+<!-- ==================================================== 启动 -->
+<div class="splash" id="splash">
+  <div class="inner">
+    <div class="ring"></div>
+    <h1>SILVEREYE</h1>
+    <p>沉浸式摄影模拟器 · 取景中</p>
+  </div>
+</div>
+
+<div id="app">
+
+  <!-- ================================================== 顶栏 -->
+  <header class="topbar">
+    <div class="brand">
+      <div class="mark"></div>
+      <div>
+        <div class="txt">SILVEREYE</div>
+        <div class="sub">PHOTO SIMULATOR</div>
+      </div>
+    </div>
+
+    <div class="seg" id="modeSeg">
+      <button data-mode="single" class="on">单张拍摄</button>
+      <button data-mode="compare">对比试拍</button>
+      <button data-mode="lesson">教材课程</button>
+    </div>
+
+    <div class="spacer"></div>
+
+    <div class="statuslight" id="statusLight">
+      <span class="dot"></span><span class="txt">检测相机…</span>
+    </div>
+
+    <button class="icobtn" id="btnSound" title="相机音效">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M11 5 6 9H2v6h4l5 4V5z"/><path d="M15.5 8.5a5 5 0 0 1 0 7"/><path d="M19 5a9 9 0 0 1 0 14"/>
+      </svg>
+    </button>
+    <button class="icobtn" id="btnGrid" title="取景辅助线">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+        <rect x="3" y="3" width="18" height="18" rx="2"/><path d="M9 3v18M15 3v18M3 9h18M3 15h18"/>
+      </svg>
+    </button>
+    <button class="icobtn" id="btnKeys" title="快捷键">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round">
+        <rect x="2" y="6" width="20" height="12" rx="2"/><path d="M6 10h.01M10 10h.01M14 10h.01M18 10h.01M8 14h8"/>
+      </svg>
+    </button>
+    <button class="icobtn" id="btnImmerse" title="沉浸取景模式 (F)">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round">
+        <path d="M3 8V5a2 2 0 0 1 2-2h3M21 8V5a2 2 0 0 0-2-2h-3M3 16v3a2 2 0 0 0 2 2h3M21 16v3a2 2 0 0 1-2 2h-3"/>
+      </svg>
+    </button>
+  </header>
+
+  <!-- ================================================== 舞台 -->
+  <main class="stage">
+
+    <!-- ---------------------------------------- 左：场景 -->
+    <aside class="rail rail-left">
+      <div class="sect">
+        <h3>场景库 <span class="chev">▾</span></h3>
+        <div class="sect-body">
+          <div class="scene-search">
+            <input type="text" id="sceneSearch" placeholder="搜索场景…" />
+          </div>
+          <div class="scene-cats" id="sceneCats"></div>
+          <div class="scene-grid" id="sceneGrid"></div>
+        </div>
+      </div>
+
+      <div class="sect">
+        <h3>快速配方 <span class="chev">▾</span></h3>
+        <div class="sect-body">
+          <div class="chips" id="quickPresets"></div>
+          <p class="hint" style="margin-top:9px">配方会一次性装载整机参数，再用右侧旋钮微调。</p>
+        </div>
+      </div>
+    </aside>
+
+    <!-- ---------------------------------------- 中：取景器 -->
+    <section class="center">
+      <div class="center-toolbar">
+        <div class="scene-title">
+          <b id="ctScene">街头人像</b>
+          <span id="ctNote">场景说明</span>
+        </div>
+        <div class="spacer"></div>
+        <button class="tgl" id="tglHist">直方图</button>
+        <button class="tgl" id="tglZebra">过曝斑马</button>
+        <button class="tgl on" id="tglDof">景深标尺</button>
+      </div>
+
+      <div class="vf-stage">
+        <div class="vf" id="vf" style="--vf-ratio:1.5">
+
+          <div class="vf-scene">
+            <div class="vf-photo" id="vfPhoto"></div>
+            <div class="vf-motion" id="vfMotion"></div>
+            <div class="vf-dofblur" id="vfDofBlur"></div>
+          </div>
+
+          <div class="vf-exp" id="vfExp"></div>
+          <div class="vf-zebra" id="vfZebra"></div>
+          <div class="vf-grain" id="vfGrain"></div>
+
+          <div class="vf-marks" id="vfMarks">
+            <div class="vf-grid" id="vfGrid">
+              <div></div><div></div><div></div>
+              <div></div><div></div><div></div>
+              <div></div><div></div><div></div>
+            </div>
+            <div class="vf-corners"><span></span><span></span><span></span><span></span></div>
+          </div>
+
+          <div class="vf-af" id="vfAf"></div>
+
+          <div class="vf-zoomtag" id="vfZoomTag"></div>
+
+          <div class="vf-top">
+            <div class="vf-rec"><i></i><span id="vfBody">SONY α7R V</span></div>
+            <span class="sep">|</span>
+            <span id="vfSceneName">STREET PORTRAIT</span>
+            <div class="right">
+              <span id="vfFormat">FF</span>
+              <span id="vfFilmTag">RAW</span>
+              <span id="vfFrameNo">FRAME 01</span>
+            </div>
+          </div>
+
+          <div class="vf-meter" id="vfMeter">
+            <div class="num" id="vfMeterNum">0.0</div>
+            <div class="scale" id="vfMeterScale">
+              <div class="needle" id="vfNeedle" style="bottom:50%"></div>
+            </div>
+          </div>
+
+          <canvas class="vf-hist" id="vfHist" width="256" height="88"></canvas>
+
+          <div class="vf-dof on" id="vfDof">
+            <div class="bar"><i id="vfDofBar"></i></div>
+            <div class="line"><span id="vfDofNear">0.9m</span><span id="vfDofFar">∞</span></div>
+          </div>
+
+          <div class="vf-info">
+            <div class="cell"><b id="ivFocal">85</b><small>mm</small></div>
+            <div class="cell hi"><b id="ivAperture">f/1.8</b><small>光圈</small></div>
+            <div class="cell"><b id="ivShutter">1/250</b><small>快门</small></div>
+            <div class="cell"><b id="ivIso">400</b><small>iso</small></div>
+            <div class="cell"><b id="ivFilm">Portra</b><small>胶片</small></div>
+          </div>
+
+          <div class="vf-shutter" id="vfShutter">
+            <div class="curtain a"></div>
+            <div class="curtain b"></div>
+          </div>
+          <div class="vf-mirror" id="vfMirror"></div>
+          <div class="vf-flashpop" id="vfFlash"></div>
+
+          <div class="vf-bulb" id="vfBulb">
+            <div class="ring">
+              <svg viewBox="0 0 108 108">
+                <circle class="bg" cx="54" cy="54" r="50"></circle>
+                <circle class="fg" cx="54" cy="54" r="50" id="bulbArc"
+                        stroke-dasharray="314" stroke-dashoffset="314"></circle>
+              </svg>
+              <div class="t" id="bulbT">0.0s</div>
+            </div>
+          </div>
+
+          <div class="vf-busy" id="vfBusy">
+            <div class="txt">显影中</div>
+            <div class="bar"><i></i></div>
+            <div class="sub" id="vfBusySub">正在把参数翻译成画面…</div>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- 快门台 -->
+      <div class="shutter-deck">
+        <div class="deck-cell">
+          <div class="iris" id="iris"></div>
+          <div class="deck-label" id="irisLabel">f/1.8</div>
+        </div>
+
+        <div class="deck-cell">
+          <div class="counter" id="frameCounter">01</div>
+          <div class="deck-label">张数</div>
+        </div>
+
+        <div class="deck-cell">
+          <button class="shutter-btn" id="shutterBtn" title="按快门（空格）">
+            <svg class="ring" viewBox="0 0 88 88">
+              <circle cx="44" cy="44" r="42" id="shutterArc" stroke-dasharray="264" stroke-dashoffset="264" transform="rotate(-90 44 44)"></circle>
+            </svg>
+          </button>
+          <div class="deck-label">快门</div>
+        </div>
+
+        <div class="deck-cell">
+          <div class="advance-crank" id="crank">
+            <div class="lever"></div><div class="hub"></div>
+          </div>
+          <div class="deck-label" id="crankLabel">过片</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ---------------------------------------- 右：参数 -->
+    <aside class="rail rail-right">
+
+      <div class="sect">
+        <h3>机身 <span class="chev">▾</span></h3>
+        <div class="sect-body">
+          <div class="body-card" id="bodyCard"></div>
+          <div class="field" style="margin-top:11px">
+            <label>机型</label>
+            <div class="chips" id="bodyChips"></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="sect">
+        <h3>镜头 <span class="chev">▾</span></h3>
+        <div class="sect-body">
+          <div class="field">
+            <label>焦距 <span class="val" id="lensVal">50mm</span></label>
+            <input type="range" id="lensRange" min="0" max="15" step="1" value="6" />
+            <div class="chips" id="lensAutoChips" style="margin-top:5px"></div>
+          </div>
+          <div class="field">
+            <label>特殊镜 <span class="val" id="lensModVal">普通</span></label>
+            <div class="chips" id="lensModChips"></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="sect">
+        <h3>曝光 · 光圈 / 快门 / ISO <span class="chev">▾</span></h3>
+        <div class="sect-body">
+          <div class="field">
+            <label>光圈 <span class="val" id="apVal">f/1.8</span></label>
+            <div class="chips" id="apChips"></div>
+          </div>
+          <div class="field">
+            <label>快门 <span class="val" id="shVal">1/250</span></label>
+            <div class="chips" id="shChips"></div>
+            <div class="chips" style="margin-top:5px">
+              <button class="chip" id="btnAutoExpose">⚙ 自动测光（按场景 EV 定快门）</button>
+            </div>
+          </div>
+          <div class="field">
+            <label>曝光补偿 <span class="val" id="evVal">0.0 EV</span></label>
+            <input type="range" id="evRange" min="-3" max="3" step="0.3" value="0" />
+          </div>
+        </div>
+      </div>
+
+      <div class="sect">
+        <h3>感光材料 <span class="chev">▾</span></h3>
+        <div class="sect-body">
+          <div class="field" id="digitalIsoField">
+            <label>ISO <span class="val" id="isoVal">100</span></label>
+            <div class="chips" id="isoChips"></div>
+          </div>
+          <div class="field">
+            <label>胶片 / 色彩 <span class="val" id="filmVal">胶片</span></label>
+            <div class="film-brands" id="filmGroups"></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="sect">
+        <h3>光 · 滤镜 · 闪光 <span class="chev">▾</span></h3>
+        <div class="sect-body">
+          <div class="field">
+            <label>滤镜</label>
+            <div class="chips" id="filterChips"></div>
+          </div>
+          <div class="field">
+            <label>闪光 / 补光</label>
+            <div class="chips" id="flashChips"></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="sect">
+        <h3>摄影手法 <span class="chev">▾</span></h3>
+        <div class="sect-body">
+          <div class="chips" id="techChips"></div>
+          <p class="hint" id="techNote" style="margin-top:9px"></p>
+        </div>
+      </div>
+
+      <div class="sect">
+        <h3>构图 <span class="chev">▾</span></h3>
+        <div class="sect-body">
+          <div class="chips" id="compChips"></div>
+        </div>
+      </div>
+
+      <div class="sect">
+        <h3>拍摄距离 <span class="chev">▾</span></h3>
+        <div class="sect-body">
+          <div class="field">
+            <label>主体距离 <span class="val" id="distVal">3.0 m</span></label>
+            <input type="range" id="distRange" min="0" max="100" step="0.5" value="30" />
+          </div>
+          <div class="hint" id="opticsHint"></div>
+        </div>
+      </div>
+
+      <div class="sect">
+        <h3>提示词工程 <span class="chev">▾</span></h3>
+        <div class="sect-body">
+          <div class="promptbox" id="promptBox"></div>
+          <div class="field" style="margin-top:10px">
+            <label>自定义补充</label>
+            <textarea id="extraPrompt" rows="2" placeholder="追加你想强调的画面元素…"></textarea>
+          </div>
+          <div class="chips" style="margin-top:8px">
+            <button class="btn ghost" id="btnCopyPrompt">复制提示词</button>
+            <button class="btn ghost" id="btnCopyNeg">复制负向</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="sect">
+        <h3>生成设置 <span class="chev">▾</span></h3>
+        <div class="sect-body">
+          <div class="field">
+            <label>步数 <span class="val" id="stepsVal">25</span></label>
+            <input type="range" id="stepsRange" min="10" max="50" step="1" value="25" />
+          </div>
+          <div class="field">
+            <label>随机种子 <span class="val" id="seedVal">随机</span></label>
+            <input type="text" id="seedInput" placeholder="留空 = 随机" />
+          </div>
+          <button class="btn primary block" id="btnShoot">拍下这一张</button>
+          <p class="hint" style="margin-top:8px">单张约 13–25 秒（3090 / 1024 级分辨率）。</p>
+        </div>
+      </div>
+
+      <div class="sect">
+        <h3>本次参数速览 <span class="chev">▾</span></h3>
+        <div class="sect-body">
+          <div class="exif" id="exifNow"></div>
+        </div>
+      </div>
+
+    </aside>
+  </main>
+
+  <!-- ================================================== 胶卷 -->
+  <div class="filmstrip-wrap">
+    <div class="filmstrip-head">
+      <b>胶卷</b>
+      <span id="stripInfo">还没有照片 —— 按快门开始</span>
+      <span class="spacer"></span>
+      <button class="tgl" id="btnCompareFrom">选两张对比</button>
+      <button class="tgl" id="btnClear">清空</button>
+    </div>
+    <div class="filmstrip" id="filmstrip">
+      <div class="frame skeleton"><div class="sp"></div></div>
+    </div>
+  </div>
+
+</div>
+
+<!-- ==================================================== 灯箱 -->
+<div class="lightbox" id="lightbox">
+  <button class="closex" id="lbClose">×</button>
+  <img class="stage-img" id="lbImg" alt="" />
+  <div class="panel">
+    <h4>EXIF · 拍摄数据</h4>
+    <dl class="exif" id="lbExif"></dl>
+    <h4>提示词</h4>
+    <div class="promptbox" id="lbPrompt" style="max-height:200px"></div>
+    <h4 style="margin-top:12px">负向提示词</h4>
+    <div class="promptbox" id="lbNeg" style="max-height:96px;color:var(--ink-2)"></div>
+    <div class="chips" style="margin-top:12px">
+      <button class="btn ghost" id="lbRedo">同参数重拍</button>
+      <button class="btn ghost" id="lbLoad">载入这套参数</button>
+      <button class="btn ghost" id="lbDel">删除</button>
+    </div>
+  </div>
+</div>
+
+<!-- ==================================================== 对比模式 -->
+<div class="compare" id="compare">
+  <header>
+    <h2>对比试拍</h2>
+    <div class="seg" id="cmpDim">
+      <button data-dim="aperture" class="on">光圈</button>
+      <button data-dim="shutter">快门</button>
+      <button data-dim="lens">焦距</button>
+      <button data-dim="film">胶片</button>
+      <button data-dim="technique">手法</button>
+      <button data-dim="selected">选中的两张</button>
+    </div>
+    <span class="spacer"></span>
+    <button class="btn primary" id="cmpRun">开始对比</button>
+    <button class="closex" id="cmpClose" style="position:static;width:32px;height:32px;font-size:18px">×</button>
+  </header>
+  <div class="grid">
+    <div class="slot">
+      <div class="hd"><b id="cmpA_hd">f/1.4</b><span id="cmpA_sub"></span></div>
+      <div class="imgwrap"><img id="cmpA_img" alt="" /></div>
+      <div class="diff" id="cmpA_diff"></div>
+    </div>
+    <div class="slot">
+      <div class="hd"><b id="cmpB_hd">f/16</b><span id="cmpB_sub"></span></div>
+      <div class="imgwrap"><img id="cmpB_img" alt="" /></div>
+      <div class="diff" id="cmpB_diff"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ==================================================== 课程抽屉 -->
+<div class="drawer" id="drawer">
+  <header>
+    <h2 id="drawerTitle">教材课程</h2>
+    <span class="spacer"></span>
+    <button class="icobtn" id="drawerClose">✕</button>
+  </header>
+  <div class="body" id="drawerBody"></div>
+</div>
+
+<!-- ==================================================== 快捷键 -->
+<div class="drawer" id="keys" style="width:400px">
+  <header><h2>快捷键</h2><span class="spacer"></span><button class="icobtn" id="keysClose">✕</button></header>
+  <div class="body">
+    <div class="exif">
+      <dt>空格</dt><dd>按快门</dd>
+      <dt>F</dt><dd>沉浸取景模式</dd>
+      <dt>G</dt><dd>辅助线开关</dd>
+      <dt>C</dt><dd>对比试拍</dd>
+      <dt>L</dt><dd>教材课程</dd>
+      <dt>1 – 9</dt><dd>快速切场景</dd>
+      <dt>A</dt><dd>自动焦距（按场景）</dd>
+      <dt>E</dt><dd>自动测光（定快门）</dd>
+      <dt>← →</dt><dd>焦距 −／+</dd>
+      <dt>↑ ↓</dt><dd>光圈 大／小</dd>
+      <dt>[ ]</dt><dd>快门 慢／快</dd>
+      <dt>Esc</dt><dd>关闭浮层</dd>
+    </div>
+    <p class="hint">提示：所有旋钮改动都会实时换算景深、视角与测光，并重写提示词——<b>取景器里的预览就是你此刻参数的模拟结果</b>。</p>
+  </div>
+</div>
+
+<div class="toast-wrap" id="toasts"></div>
+
+<script src="/js/catalog.js"></script>
+<script src="/js/scenes.js"></script>
+<script src="/js/engine.js"></script>
+<script src="/js/audio.js"></script>
+<script src="/js/viewfinder.js"></script>
+<script src="/js/gallery.js"></script>
+<script src="/js/lessons.js"></script>
+<script src="/js/app.js"></script>
+</body>
+</html>
