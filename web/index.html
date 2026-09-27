@@ -7,6 +7,7 @@
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Ccircle cx='16' cy='16' r='14' fill='none' stroke='%23ffb43d' stroke-width='2'/%3E%3Ccircle cx='16' cy='16' r='6' fill='%23ffb43d'/%3E%3C/svg%3E" />
 <link rel="stylesheet" href="/css/base.css" />
 <link rel="stylesheet" href="/css/camera.css" />
+<link rel="stylesheet" href="/css/kit.css" />
 </head>
 <body>
 
@@ -42,6 +43,14 @@
     <div class="statuslight" id="statusLight">
       <span class="dot"></span><span class="txt">检测相机…</span>
     </div>
+
+    <button class="engbtn" id="btnEngine" title="生图引擎设置">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M12 3v3M12 18v3M3 12h3M18 12h3M5.6 5.6l2.1 2.1M16.3 16.3l2.1 2.1M18.4 5.6l-2.1 2.1M7.7 16.3l-2.1 2.1"/>
+        <circle cx="12" cy="12" r="3.4"/>
+      </svg>
+      <span id="engineNow">本地 Qwen-Image 2.1</span>
+    </button>
 
     <button class="icobtn" id="btnSound" title="相机音效">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
@@ -229,6 +238,10 @@
           <div class="field" style="margin-top:11px">
             <label>机型</label>
             <div class="chips" id="bodyChips"></div>
+          </div>
+          <div class="chips" style="margin-top:7px">
+            <button class="btn ghost" id="btnNewBody">＋ 自定义机型</button>
+            <button class="btn ghost" id="btnEditBody">编辑</button>
           </div>
         </div>
       </div>
@@ -463,13 +476,156 @@
 
 <div class="toast-wrap" id="toasts"></div>
 
+<!-- ==================================================== 生图引擎设置 -->
+<div class="modal" id="engineModal">
+  <div class="modal-box wide">
+    <header>
+      <h2>生图引擎</h2>
+      <span class="modal-sub" id="engineName">本地 Qwen-Image 2.1</span>
+      <span class="spacer"></span>
+      <a class="doclink" id="engineDocs" href="#" target="_blank" rel="noopener"></a>
+      <button class="icobtn" id="engineClose">✕</button>
+    </header>
+    <div class="modal-body two-col">
+
+      <div class="col-left">
+        <div class="sect-label">可用引擎</div>
+        <div class="engine-list" id="engineList"></div>
+
+        <div class="sect-label" style="margin-top:16px">常用服务（一键填好地址与模型）</div>
+        <div class="chips" id="enginePresets"></div>
+        <p class="hint" style="margin-top:8px">
+          <b>绿点</b> = 国内可直连；<b>红点</b> = 需要自备可达线路。
+        </p>
+        <p class="hint">
+          出图协议其实只有四种：ComfyUI 原生、OpenAI 的 <code>/images/generations</code>、
+          Google 的 <code>:generateContent</code>、以及 OpenRouter 的 chat 多模态。
+          国内绝大多数服务（硅基流动 / 火山方舟 / 智谱 / 百炼）都走第一种兼容协议。
+        </p>
+      </div>
+
+      <div class="col-right">
+        <div id="engineForm"></div>
+
+        <div class="hint-box" id="engineHint"></div>
+        <div class="hint-box msg" id="engineMsg" style="display:none"></div>
+
+        <div class="chips" style="margin-top:12px">
+          <button class="btn" id="btnProbe">测试连接</button>
+          <button class="btn primary" id="btnSaveEngine">保存配置</button>
+        </div>
+        <p class="hint" style="margin-top:10px">
+          密钥默认只保存在服务端 <code>providers.json</code>（该文件已加入 .gitignore），
+          浏览器里不留副本。勾选「在本机浏览器记住」才会写 localStorage。
+        </p>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<!-- ==================================================== 自定义机型 -->
+<div class="modal" id="gearModal">
+  <div class="modal-box">
+    <header>
+      <h2 id="gearTitle">自定义机型</h2>
+      <span class="modal-sub">保存后会出现在机身列表里</span>
+      <span class="spacer"></span>
+      <button class="icobtn" id="gearClose">✕</button>
+    </header>
+    <div class="modal-body">
+      <div class="row2">
+        <div class="field"><label>显示名（中文）</label>
+          <input type="text" id="gCn" placeholder="例如：我的徕卡 IIIf" /></div>
+        <div class="field"><label>机型代号（英文，用于提示词）</label>
+          <input type="text" id="gName" placeholder="例如：Leica IIIf" /></div>
+      </div>
+
+      <div class="row2">
+        <div class="field"><label>类型</label>
+          <select id="gKind">
+            <option value="digital">数码</option>
+            <option value="film" selected>胶片</option>
+            <option value="instant">即时成像</option>
+          </select></div>
+        <div class="field"><label>形态（决定机身绘制方式）</label>
+          <select id="gGrip">
+            <option value="slr">单反</option>
+            <option value="mirrorless">无反</option>
+            <option value="rangefinder">旁轴</option>
+            <option value="tlr">双反</option>
+            <option value="view">座机</option>
+            <option value="compact">傻瓜机</option>
+            <option value="instant">拍立得</option>
+            <option value="phone">手机</option>
+            <option value="pinhole">针孔</option>
+          </select></div>
+      </div>
+
+      <div class="field"><label>画幅</label>
+        <select id="gFormat"></select></div>
+
+      <div class="row3" id="gCustomFmt" style="display:none">
+        <div class="field"><label>感光面宽 (mm)</label><input type="number" id="gSensorW" value="36" step="0.1" /></div>
+        <div class="field"><label>画幅比（宽/高）</label><input type="number" id="gRatio" value="1.5" step="0.01" /></div>
+        <div class="field"><label>弥散圈 (mm，留空自动)</label><input type="number" id="gCoc" value="" step="0.001" /></div>
+      </div>
+
+      <div class="row3">
+        <div class="field"><label>最快快门</label><select id="gMinShutter"></select></div>
+        <div class="field"><label>最慢快门</label><select id="gMaxShutter"></select></div>
+        <div class="field"><label>过片方式</label>
+          <select id="gAdvance">
+            <option value="lever">扳手</option><option value="crank">摇柄</option>
+            <option value="auto">自动</option><option value="dark-slide">暗盒插板</option>
+          </select></div>
+      </div>
+
+      <div class="row3">
+        <div class="field"><label>基准 ISO</label><input type="number" id="gBaseIso" value="100" /></div>
+        <div class="field"><label>最高 ISO</label><input type="number" id="gMaxIso" value="3200" /></div>
+        <div class="field"><label>固定光圈 f/（针孔等，留空=可变）</label><input type="number" id="gFixedAp" value="" step="0.1" /></div>
+      </div>
+
+      <div class="row2">
+        <div class="field"><label>腰平取景</label>
+          <select id="gWaist"><option value="0">否</option><option value="1">是</option></select></div>
+        <div class="field"><label>特性描述（给自己看的）</label>
+          <input type="text" id="gTrait" placeholder="例如：1950 年代德国旁轴，镀膜偏冷" /></div>
+      </div>
+
+      <div class="field">
+        <label>提示词签名 <span class="hint-inline">这句英文会直接进提示词，决定模型怎么"想象"这台相机</span></label>
+        <textarea id="gToken" rows="3" placeholder="留空则按上面的选项自动生成"></textarea>
+        <div class="chips" style="margin-top:6px">
+          <button class="btn ghost" id="gAutoToken">按选项自动生成</button>
+        </div>
+      </div>
+
+      <div class="hint-box msg" id="gearMsg" style="display:none"></div>
+
+      <div class="chips" style="margin-top:14px">
+        <button class="btn primary" id="gearSave">保存机型</button>
+        <button class="btn" id="gearDelete" style="display:none">删除</button>
+        <span class="spacer"></span>
+        <button class="btn ghost" id="gearExport">导出全部</button>
+        <button class="btn ghost" id="gearImport">导入 JSON</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<input type="file" id="gearFile" accept=".json,application/json" style="display:none" />
+
 <script src="/js/catalog.js"></script>
 <script src="/js/scenes.js"></script>
 <script src="/js/engine.js"></script>
+<script src="/js/customgear.js"></script>
 <script src="/js/audio.js"></script>
 <script src="/js/viewfinder.js"></script>
 <script src="/js/gallery.js"></script>
 <script src="/js/lessons.js"></script>
+<script src="/js/providers.js"></script>
 <script src="/js/app.js"></script>
 </body>
 </html>

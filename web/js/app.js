@@ -80,6 +80,16 @@
         buildAll(); update();
         window.CAMSOUND.cock();
       });
+    // 自定义机型加个小圆点，一眼区分
+    $('bodyChips').querySelectorAll('.chip').forEach((el, i) => {
+      const b = C.BODIES[i];
+      if (b && (b.custom || window.CUSTOMGEAR.isCustom(b.id))) {
+        el.classList.add('mine');
+        el.title = '自定义机型：' + b.trait;
+      }
+    });
+    const cur = E.byId(C.BODIES, S.body);
+    $('btnEditBody').style.display = (cur && cur.custom) ? '' : 'none';
   }
 
   /**
@@ -416,9 +426,11 @@
   }
 
   function exifRows(s, o) {
+    const eng = window.ENGINEBOX ? window.ENGINEBOX.describe() : null;
     const rows = [
       ['场景', o.scene.cn],
-      ['机身', o.body.cn],
+      ['机身', o.body.cn + (o.body.custom ? '（自定义）' : '')],
+      ['画幅', o.format.label],
       ['焦距', `${s.lens}mm / 等效 ${o.equiv.toFixed(0)}mm`],
       ['视角', `${o.fovH.toFixed(1)}° × ${o.fovV.toFixed(1)}°`],
       ['光圈', 'f/' + E.fmtF(s.aperture)],
@@ -431,6 +443,7 @@
       ['曝光补偿', `${(s.evComp || 0) > 0 ? '+' : ''}${(s.evComp || 0).toFixed(1)} EV`],
       ['颗粒', o.grain.toFixed(2)]
     ];
+    if (eng) rows.splice(2, 0, ['生图引擎', eng.short]);
     return rows.map(([k, v]) => `<dt>${k}</dt><dd>${esc(v)}</dd>`).join('');
   }
 
@@ -491,13 +504,16 @@
         width: w, height: h,
         steps: steps, cfg: 1.0,
         seed: seed == null || seed === '' ? -1 : Number(seed),
+        provider: window.ENGINEBOX ? window.ENGINEBOX.payload() : { id: 'comfy_qwen' },
         meta: currentMeta(o, built),
         label: o.scene.cn
       })
     });
     if (!r.ok) {
       const txt = await r.text().catch(() => '');
-      throw new Error(`HTTP ${r.status} ${txt.slice(0, 200)}`);
+      let msg = txt.slice(0, 300);
+      try { msg = JSON.parse(txt).detail || msg; } catch (e) { /* 保持原文 */ }
+      throw new Error(msg.replace(/^"|"$/g, ''));
     }
     const shot = await r.json();
     shot.state = stateSnapshot(o);
@@ -803,6 +819,34 @@
     // 场景搜索
     $('sceneSearch').addEventListener('input', (e) => { sceneQuery = e.target.value; buildScenes(); });
 
+    /* ---------- 生图引擎 ---------- */
+    $('btnEngine').addEventListener('click', () => window.ENGINEBOX.open());
+    $('engineClose').addEventListener('click', () => window.ENGINEBOX.close());
+    $('engineModal').addEventListener('click', (e) => {
+      if (e.target.id === 'engineModal') window.ENGINEBOX.close();
+    });
+    $('btnProbe').addEventListener('click', () => window.ENGINEBOX.probe());
+    $('btnSaveEngine').addEventListener('click', () => window.ENGINEBOX.saveServer());
+
+    /* ---------- 自定义机型 ---------- */
+    $('btnNewBody').addEventListener('click', () => window.CUSTOMGEAR.openEditor(null));
+    $('btnEditBody').addEventListener('click', () => {
+      if (window.CUSTOMGEAR.isCustom(S.body)) window.CUSTOMGEAR.openEditor(S.body);
+    });
+    window.CUSTOMGEAR.setNotify((saved, removedId) => {
+      if (removedId && S.body === removedId) {
+        S = E.switchBody(S, 'a7rv');           // 删掉的正是当前机型 → 退回内置
+      }
+      if (saved) S = E.switchBody(S, saved.id);
+      buildAll(); update();
+      if (saved) {
+        loadPreview(S.scene);
+        toast(`已保存机型「${saved.cn}」并切换过去`, 'ok');
+      } else {
+        toast('已更新自定义机型', 'ok');
+      }
+    });
+
     // 提示词复制
     $('btnCopyPrompt').addEventListener('click', () => {
       navigator.clipboard?.writeText(lastAssembled.positive).then(() => toast('正向提示词已复制', 'ok'));
@@ -848,6 +892,8 @@
         $('compare').classList.remove('on');
         closeDrawer(); GALLERY.closeLightbox();
         $('keys').classList.remove('on');
+        window.ENGINEBOX.close();
+        window.CUSTOMGEAR.closeEditor();
         $('modeSeg').querySelectorAll('button').forEach((b) => b.classList.toggle('on', b.dataset.mode === 'single'));
       }
       if (e.key === 'ArrowLeft' || e.key === 'ArrowRight') {
@@ -945,13 +991,21 @@
 
   async function checkServer() {
     const el = $('statusLight');
+    const eng = window.ENGINEBOX ? window.ENGINEBOX.describe() : null;
     try {
       const r = await fetch('/api/status');
       const j = await r.json();
       serverOk = !!j.ok;
-      el.className = 'statuslight ' + (j.ok ? 'ok' : 'bad');
-      el.querySelector('.txt').textContent = j.ok ? '相机就绪' : 'ComfyUI 未连接';
-      if (!j.ok) toast('ComfyUI 未连接：请先启动 ComfyUI（默认 127.0.0.1:8000）', 'err', 7000);
+      // 只有选中本地引擎时，ComfyUI 是否在线才决定状态灯
+      const needComfy = !eng || eng.id === 'comfy_qwen';
+      if (needComfy && !j.ok) {
+        el.className = 'statuslight bad';
+        el.querySelector('.txt').textContent = 'ComfyUI 未连接';
+        toast('ComfyUI 未连接：请先启动它，或改用云端生图引擎', 'err', 6000);
+      } else {
+        el.className = 'statuslight ok';
+        el.querySelector('.txt').textContent = needComfy ? '相机就绪' : '云端引擎就绪';
+      }
     } catch (e) {
       el.className = 'statuslight bad';
       el.querySelector('.txt').textContent = '服务未启动';
@@ -972,6 +1026,7 @@
   function init() {
     VF.bindShakeKeyframes();
     VF.buildIris($('iris'));
+    window.CUSTOMGEAR.sync();          // 自定义机身先进 CATALOG，再建控件
     buildAll();
     bind();
     loadPreview(S.scene);
@@ -981,7 +1036,12 @@
     // 补一下首屏选择态
     $('vfZebra').style.opacity = '0';
 
-    loadGallery().then(checkServer);
+    loadGallery();
+    window.ENGINEBOX.init().then(() => {
+      const d = window.ENGINEBOX.describe();
+      $('engineNow').textContent = d.short;
+      return checkServer();
+    });
 
     setTimeout(() => $('splash').classList.add('gone'), 900);
   }

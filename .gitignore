@@ -5,6 +5,8 @@
 # --------------------------------------------------------------- 密钥 / 凭据
 # pass.txt 里是 GitHub PAT，绝对不能进仓库
 pass.txt
+# providers.json 存各生图引擎的 API Key（服务端配置），同样不能进仓库
+providers.json
 *.pem
 *.key
 .env

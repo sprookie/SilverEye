@@ -1,0 +1,144 @@
+/* ==========================================================================
+   kit.css —— 弹窗 / 生图引擎面板 / 自定义机型表单
+   ========================================================================== */
+
+/* --------------------------------------------------------------- 顶栏引擎按钮 */
+.engbtn {
+  display: flex; align-items: center; gap: 7px;
+  padding: 5px 11px; border-radius: 8px;
+  background: var(--bg-2); border: 1px solid var(--line-2);
+  color: var(--ink-1); font-size: 11px; max-width: 260px;
+  transition: all 0.18s var(--ease);
+}
+.engbtn:hover { border-color: rgba(255,180,61,.45); color: var(--ink-0); background: var(--bg-3); }
+.engbtn svg { width: 14px; height: 14px; flex: 0 0 auto; color: var(--amber); }
+.engbtn span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+/* --------------------------------------------------------------- 弹窗 */
+.modal {
+  position: fixed; inset: 0; z-index: 760;
+  display: none; align-items: center; justify-content: center;
+  background: rgba(4, 5, 8, 0.72); backdrop-filter: blur(10px);
+  padding: 30px;
+}
+.modal.on { display: flex; animation: fadeIn 0.24s var(--ease); }
+@keyframes fadeIn { from { opacity: 0; } }
+
+.modal-box {
+  width: 640px; max-width: 100%; max-height: 90vh;
+  display: flex; flex-direction: column;
+  background: linear-gradient(168deg, var(--bg-2), var(--bg-1));
+  border: 1px solid var(--line-2); border-radius: var(--r-lg);
+  box-shadow: 0 40px 100px rgba(0, 0, 0, 0.8);
+  animation: modalIn 0.3s var(--ease);
+  overflow: hidden;
+}
+.modal-box.wide { width: 940px; }
+@keyframes modalIn { from { opacity: 0; transform: translateY(16px) scale(0.98); } }
+
+.modal-box > header {
+  display: flex; align-items: center; gap: 10px;
+  padding: 15px 18px 13px;
+  border-bottom: 1px solid var(--line);
+  background: linear-gradient(180deg, rgba(255,255,255,.03), transparent);
+}
+.modal-box > header h2 { font-size: 14px; color: var(--ink-0); font-weight: 600; letter-spacing: .02em; }
+.modal-sub { font-size: 10.5px; color: var(--ink-3); padding-left: 2px; }
+.modal-box > header .spacer { flex: 1; }
+.doclink { font-size: 10.5px; color: var(--cyan); text-decoration: none; opacity: .8; }
+.doclink:hover { opacity: 1; text-decoration: underline; }
+
+.modal-body { flex: 1; overflow-y: auto; padding: 18px; }
+.modal-body.two-col { display: grid; grid-template-columns: 330px 1fr; gap: 22px; }
+.col-left { border-right: 1px solid var(--line); padding-right: 20px; }
+.col-right { min-width: 0; }
+
+.sect-label {
+  font-size: 10px; font-weight: 600; letter-spacing: .16em; text-transform: uppercase;
+  color: var(--ink-3); margin-bottom: 9px;
+}
+
+.row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.row3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; }
+
+.modal select {
+  width: 100%; background: var(--bg-0); border: 1px solid var(--line);
+  border-radius: var(--r-sm); padding: 8px 10px; font-size: 11.5px; color: var(--ink-0);
+  outline: none; appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0h10L5 6z' fill='%2368717f'/%3E%3C/svg%3E");
+  background-repeat: no-repeat; background-position: right 10px center;
+  transition: border-color .18s;
+}
+.modal select:focus { border-color: rgba(255,180,61,.45); }
+.modal input[type="number"] { width: 100%; background: var(--bg-0); border: 1px solid var(--line); border-radius: var(--r-sm); padding: 8px 10px; font-size: 11.5px; color: var(--ink-0); outline: none; }
+.modal input[type="number"]:focus { border-color: rgba(255,180,61,.45); }
+
+.hint-inline { color: var(--ink-3); font-weight: 400; letter-spacing: 0; text-transform: none; font-size: 10px; }
+
+/* 引擎卡片 */
+.engine-list { display: flex; flex-direction: column; gap: 7px; }
+.engine-card {
+  text-align: left; padding: 11px 12px; border-radius: var(--r-md);
+  background: var(--bg-0); border: 1px solid var(--line);
+  transition: all .18s var(--ease);
+}
+.engine-card:hover { border-color: var(--line-3); transform: translateX(2px); }
+.engine-card.on {
+  border-color: rgba(255,180,61,.55); background: linear-gradient(120deg, rgba(255,180,61,.1), transparent 70%);
+  box-shadow: 0 0 0 1px rgba(255,180,61,.2);
+}
+.engine-card .hd { display: flex; align-items: center; gap: 7px; margin-bottom: 4px; }
+.engine-card .hd b { font-size: 12px; color: var(--ink-0); font-weight: 600; }
+.engine-card .tag {
+  font-size: 9px; letter-spacing: .06em; padding: 1px 5px; border-radius: 4px;
+  background: var(--bg-3); color: var(--ink-3); border: 1px solid var(--line);
+}
+.engine-card .tag.ok { background: rgba(83,209,122,.14); color: var(--green); border-color: rgba(83,209,122,.3); }
+.engine-card .note { font-size: 10.5px; color: var(--ink-3); line-height: 1.6; margin-bottom: 6px; }
+.engine-card .caps { display: flex; gap: 8px; font-size: 9.5px; font-family: var(--font-num); }
+.engine-card .caps .y { color: var(--green); }
+.engine-card .caps .n { color: var(--ink-3); text-decoration: line-through; opacity: .55; }
+
+/* 提示框 */
+.hint-box {
+  margin-top: 12px; padding: 10px 12px; border-radius: var(--r-sm);
+  background: var(--bg-0); border: 1px solid var(--line);
+  font-size: 10.5px; line-height: 1.75; color: var(--ink-2);
+}
+.hint-box .hint-line { padding-left: 0; }
+.hint-box .hint-line.ok { color: var(--green); }
+.hint-box.msg { border-color: rgba(255,180,61,.3); color: var(--ink-1); white-space: pre-wrap; word-break: break-word; }
+
+.chk { display: flex; align-items: center; gap: 6px; margin-top: 6px; font-size: 10.5px; color: var(--ink-3); cursor: pointer; }
+.chk input { accent-color: var(--amber); }
+.chk span { user-select: none; }
+
+.adv { margin: 4px 0 11px; }
+.adv > summary {
+  font-size: 10.5px; color: var(--ink-3); cursor: pointer; padding: 5px 0;
+  list-style: none; letter-spacing: .04em;
+}
+.adv > summary::-webkit-details-marker { display: none; }
+.adv > summary::before { content: "▸ "; color: var(--amber-dim); }
+.adv[open] > summary::before { content: "▾ "; }
+.adv > summary:hover { color: var(--ink-1); }
+
+code {
+  font-family: var(--font-num); font-size: 10px;
+  background: var(--bg-0); border: 1px solid var(--line);
+  border-radius: 4px; padding: 1px 4px; color: var(--cyan);
+}
+
+.spacer { flex: 1; }
+
+/* 机身列表里区分自定义机型 */
+.chip.mine::after {
+  content: ""; position: absolute; top: 3px; right: 3px;
+  width: 5px; height: 5px; border-radius: 50%; background: var(--cyan);
+}
+.chip.mine { padding-right: 14px; }
+
+@media (max-width: 1080px) {
+  .modal-body.two-col { grid-template-columns: 1fr; }
+  .col-left { border-right: 0; padding-right: 0; border-bottom: 1px solid var(--line); padding-bottom: 16px; }
+}

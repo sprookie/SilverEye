@@ -29,8 +29,68 @@ F:\.venv\Scripts\python.exe server.py
 要求：Python 3.10+、`fastapi` / `uvicorn` / `requests`；
 ComfyUI + `qwen_image_2.1_int8_convrot` 三件套（unet / clip / vae）。
 
+> 不想装 ComfyUI 也行 —— 点顶栏的「生图引擎」换成云端 API 就能用（见下）。
+
 > 仓库里已经带了 33 张场景底图和 6 张演示作品，clone 下来就能直接用。
 > 想换一套场景底图跑 `scripts/seed_scenes.py` 重新生成即可。
+
+---
+
+## 生图引擎：本地 + 云端，随便换
+
+顶栏中间的按钮可以切换出图后端。**协议其实只有四种**，
+所以一个适配器就能覆盖一大票服务：
+
+| 引擎 | 协议 | 负向提示词 | 固定种子 | 国内直连 |
+|---|---|---|---|---|
+| **本地 Qwen-Image 2.1**（默认） | ComfyUI 原生 | ✅ | ✅ | ✅ 免费 |
+| **OpenRouter** | chat + `modalities:["image"]` | — | — | ✅ |
+| **OpenAI Images** | `POST /images/generations` | — | — | ❌ 需中转 |
+| **Google Gemini / Imagen** | `:generateContent` / `:predict` | — | — | ❌ 需中转 |
+| **自定义（OpenAI 兼容）** | 同上第一条 | — | — | ✅ 自建 |
+
+内置 12 个**一键预设**，其中标注了国内可达性：
+
+- 🟢 硅基流动 Kolors / FLUX.1-schnell、火山方舟豆包 Seedream、智谱 CogView、阿里百炼万相
+- 🟢 OpenRouter（nano-banana / gpt-image-1）
+- 🔴 OpenAI 官方、Google Gemini 官方、Imagen 4
+
+**引擎能力差异会被自动降级处理**，不会因为参数对不上就报错：
+
+- 不支持负向提示词的引擎 → 关键排除项自动折进正向（`Strictly avoid depicting: ...`）
+- 不支持固定种子的引擎 → 丢弃种子，并在面板上提示"重拍按钮会失效"
+- 固定尺寸的引擎 → 把当前画幅比**吸附到最接近的合法尺寸**
+  （gpt-image-1 认 1024²/1536×1024/1024×1536；dall-e-3 认 1792×1024 系；
+  豆包、Kolors、CogView、万相各有各的尺寸表）
+- 提示词过长 → 按引擎上限截断
+
+**密钥只进不出**：默认保存在服务端 `providers.json`（已 gitignore），
+`GET /api/config` 只回 `has_key` 标记、绝不回明文；浏览器里不留副本。
+只有主动勾选「在本机浏览器记住」才会写 localStorage。
+
+「测试连接」是**免费预检**：本地引擎查 `/system_stats`，
+OpenAI 兼容端点查 `/models`，Gemini 查 `/models`，OpenRouter 查 `/key`
+（还能顺带把余额读出来）。
+
+---
+
+## 自定义相机
+
+右侧「机身」区块底部有「＋ 自定义机型」。可定义：
+
+- **类型**：数码 / 胶片 / 即时成像
+- **形态**：单反 / 无反 / 旁轴 / 双反 / 座机 / 傻瓜机 / 拍立得 / 手机 / 针孔
+  —— 决定机身在界面上怎么画（SVG 造型跟着变）
+- **画幅**：从 8 种内置画幅里挑，或自定义「感光面宽 + 画幅比」
+  （弥散圈留空则按 `对角线/1730` 自动推算，与内置值基本吻合）
+- **快门范围 / ISO 范围 / 过片方式 / 固定光圈**（针孔机用得上）
+- **提示词签名**：这句英文直接进提示词，决定模型怎么"想象"这台相机。
+  能按选项一键生成，也能手写
+
+实测：从零建一台「钛合金旁轴」→ 刷新后仍在 → 用它拍一张 19.4 秒出图，
+提示词里正确出现 `shot on a SilverEye Ti Rangefinder, 35mm film camera, natural film grain...`。
+
+支持导出 / 导入 JSON，方便换机器或分享机型。
 
 ---
 
@@ -146,6 +206,10 @@ ComfyUI + `qwen_image_2.1_int8_convrot` 三件套（unet / clip / vae）。
 | 16 节课，每节可"载入"或"按这节课做对比" | 对比试拍，下方高亮提示词里改变的那几段 |
 | ![灯箱](docs/06-灯箱EXIF.jpg) | ![演示作品](docs/07-演示作品.jpg) |
 | 每张照片都有完整 EXIF 与当初那段提示词 | 内置 6 张演示作品（`docs/` 里另有提示词跟随测试） |
+| ![生图引擎](docs/08-生图引擎.jpg) | ![自定义机型](docs/09-自定义机型.jpg) |
+| 5 种引擎 + 12 个常用服务预设，能力差异自动降级 | 自定义机型：形态、画幅、快门范围、提示词签名 |
+| ![自定义机型生效](docs/10-自定义机型生效.jpg) | |
+| 存下来的机型直接出现在机身列表（带青色小点标记） | |
 
 ---
 
@@ -153,31 +217,41 @@ ComfyUI + `qwen_image_2.1_int8_convrot` 三件套（unet / clip / vae）。
 
 ```
 photo-sim/
-├── server.py                 FastAPI：静态托管 + /api/shot + /api/gallery
+├── server.py                 FastAPI：静态托管 + /api/shot + /api/providers
+│                             + /api/provider/probe + /api/config + /api/gallery
 ├── qwen_core.py              直连 ComfyUI 的生图核心（绕过系统代理）
+├── providers/                ★ 多厂商生图适配层
+│   ├── base.py               能力声明 / 尺寸吸附 / 负向降级 / 密钥脱敏 / 错误中文化
+│   ├── comfy_qwen.py         本地 Qwen-Image 2.1（负向 + 种子全支持）
+│   ├── openai_images.py      OpenAI Images 协议 + OpenRouter（一个文件覆盖一大票服务）
+│   ├── gemini_image.py       Gemini nano-banana（:generateContent）与 Imagen（:predict）
+│   └── registry.py           注册表 + 12 个常用服务预设
 ├── start.bat                 一键启动
 ├── scripts/
 │   ├── seed_scenes.py        批量生成 33 张场景底图（1536×1024）
 │   ├── seed_demo.py          生成 6 张演示作品并写进画廊索引
 │   ├── smoke_test.py         生图链路自检
+│   ├── test_providers.py     ★ 多引擎离线单测（不需要 API Key，60 项断言）
 │   ├── e2e_check.js          端到端交互 + 真快门验证（本机 Chrome）
 │   └── e2e_shots.js          重拍 docs/ 下的界面截图
 ├── docs/                     界面截图 + 提示词跟随测试样张
 └── web/
     ├── index.html
-    ├── css/  base.css · camera.css
-    ├── js/   catalog.js   器材数据库
-    │         scenes.js    场景 / 手法 / 构图
-    │         engine.js    提示词工程 + 光学计算
-    │         viewfinder.js 取景器 / 光圈叶片 / 机身 SVG / 快门帘
-    │         audio.js     WebAudio 合成相机音效（无音频文件）
-    │         gallery.js   胶卷条 / 灯箱 / 对比视图
-    │         lessons.js   16 节课 + 12 套快速配方
-    │         app.js       主控
+    ├── css/  base.css · camera.css · kit.css（弹窗 / 引擎面板 / 机型表单）
+    ├── js/   catalog.js     器材数据库
+    │         scenes.js      场景 / 手法 / 构图
+    │         engine.js      提示词工程 + 光学计算
+    │         customgear.js  ★ 自定义相机：翻译成机身记录 + 编辑器 UI
+    │         providers.js   ★ 生图引擎面板：预设 / 能力提示 / 预检 / 密钥策略
+    │         viewfinder.js  取景器 / 光圈叶片 / 机身 SVG / 快门帘
+    │         audio.js       WebAudio 合成相机音效（无音频文件）
+    │         gallery.js     胶卷条 / 灯箱 / 对比视图
+    │         lessons.js     16 节课 + 12 套快速配方
+    │         app.js         主控
     └── assets/
-        ├── scenes/        33 张场景底图（Qwen-Image 生成，1536×1024）
-        ├── gallery/       你拍的照片 + index.json
-        └── samples/       最早的三张提示词跟随探针（浅景深 / 摇拍 / 长曝）
+        ├── scenes/          33 张场景底图（Qwen-Image 生成，1536×1024）
+        ├── gallery/         你拍的照片 + index.json
+        └── samples/         最早的三张提示词跟随探针（浅景深 / 摇拍 / 长曝）
 ```
 
 重新生成素材：
@@ -186,6 +260,7 @@ photo-sim/
 F:\.venv\Scripts\python.exe scripts/seed_scenes.py          # 33 张底图，约 12 分钟
 F:\.venv\Scripts\python.exe scripts/seed_scenes.py neon-night   # 只重做指定场景
 F:\.venv\Scripts\python.exe scripts/seed_demo.py            # 6 张演示作品
+F:\.venv\Scripts\python.exe scripts/test_providers.py       # 多引擎单测（离线，秒级）
 ```
 
 ---
@@ -244,25 +319,56 @@ curl -X POST http://127.0.0.1:8770/api/shot \
 就不该改快门去迁就曝光，而应该改光圈 —— 这才是摄影师在暗处会做的事。
 实测：从街拍切到雨夜霓虹，f/16 自动开到 f/2，快门仍是 1/30，测光回到 +0.1 EV。
 
+**6. 各家生图 API 的响应结构没有任何标准。**
+同样是"返回一张图"，实测拿到的形态有：
+`data[0].b64_json`、`data[0].url`、
+`candidates[0].content.parts[].inlineData.data`、
+`predictions[].bytesBase64Encoded`、
+`choices[0].message.images[].image_url.url`、
+以及 `message.content` 直接是数组、里面夹 `image_url`。
+**硬编码路径一定会碎**，所以 `parse_response` 写成"先按已知路径取，取不到再递归找关键字段"，
+并且每种形态都有单测覆盖。
+
+**7. 不要假设"支持生图"就等于"支持负向提示词和种子"。**
+OpenAI / Gemini / OpenRouter 都不支持负向提示词，也都不支持固定种子。
+如果不管这些差异直接发请求，用户会收到一堆莫名其妙的参数错误。
+做法是让每个引擎声明 `caps`，由基类统一降级 ——
+把负向折进正向、丢掉种子、把画幅比吸附到合法尺寸。
+
 ---
 
 ## 验证方式
 
-本机 Chrome 无头 + `playwright-core`（复用已装好的 Chrome，**不下载浏览器内核**）：
+**1）多引擎离线单测**（不需要任何 API Key，秒级跑完）
+
+```bash
+F:\.venv\Scripts\python.exe scripts/test_providers.py     # 60 项断言
+```
+
+每个 provider 的 `build_request()` 与 `parse_response()` 都是纯函数，
+所以请求体结构和各家五花八门的响应解析可以完全离线验证 ——
+这正是"多厂商适配"最容易出错、也最该被测住的地方。
+覆盖：URL / 鉴权头 / 请求体字段、各家不同的响应嵌套
+（`data[0].b64_json`、`candidates[].content.parts[].inlineData`、
+`predictions[].bytesBase64Encoded`、`choices[0].message.images[]`）、
+安全策略拦截、能力降级、密钥脱敏。
+
+**2）浏览器端到端**（本机 Chrome + `playwright-core`，不下载浏览器内核）
 
 ```bash
 cd photo-sim
 F:\.venv\Scripts\python.exe server.py &
-NODE_PATH=<node workspace>/node_modules node scripts/e2e_check.js            # 只跑交互检查
-NODE_PATH=<node workspace>/node_modules node scripts/e2e_check.js http://127.0.0.1:8770/ shoot   # 连真快门一起跑
+NODE_PATH=<node workspace>/node_modules node scripts/e2e_check.js            # 交互检查
+NODE_PATH=<node workspace>/node_modules node scripts/e2e_check.js http://127.0.0.1:8770/ shoot   # 连真快门
 NODE_PATH=<node workspace>/node_modules node scripts/e2e_shots.js            # 重拍 docs/ 截图
 ```
 
-脚本会收集 console 报错、改光圈、换机身与胶片、选手法、切场景，
+脚本会收集 console 报错、改光圈、换机身与胶片、选手法、切场景、
 真按一次快门，抓到 EXIF 并逐张截图。
 
-**本次验证结果**：0 个 JS 报错；出图 16.9 秒（1408 宽 / 25 步）；
-50mm f/2.8 对焦 3m 时景深 2.74–3.32m、超焦距 31m，与手算一致。
+**本次验证结果**：0 个 JS 报错；本地引擎出图 16.9–25.2 秒（1408 宽 / 25 步）；
+50mm f/2.8 对焦 3m 时景深 2.74–3.32m、超焦距 31m，与手算一致；
+自定义机型从建到出图全链路通过。
 
 一个顺手验出来的 bug：测光表符号写反了（见下），
 是靠"f/16 + 1/500 拍晴天应该欠曝，脚本却打出 +5 EV"抓到的 ——
