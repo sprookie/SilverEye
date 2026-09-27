@@ -40,6 +40,31 @@ const chromePath = () => CHROME.find((p) => fs.existsSync(p)) || (() => { throw 
   await page.waitForTimeout(400);
   await shoot('01-主界面.png');
 
+  /* ---- 生图引擎面板（等连通性探测跑完再拍，圆点才有颜色）---- */
+  await page.click('#btnEngine');
+  await page.waitForTimeout(4500);
+  await page.evaluate(() => { window.ENGINEBOX.active = 'openrouter'; });
+  await page.waitForTimeout(500);
+  await shoot('08-生图引擎.png');
+
+  /* ---- 自定义机型 ---- */
+  await page.evaluate(() => window.ENGINEBOX.close());
+  await page.waitForTimeout(400);
+  await page.click('#btnNewBody');
+  await page.waitForTimeout(500);
+  await page.fill('#gCn', '我的钛合金旁轴');
+  await page.fill('#gName', 'SilverEye Ti Rangefinder');
+  await page.selectOption('#gGrip', 'rangefinder');
+  await page.fill('#gTrait', '概念机：钛壳旁轴，配 40mm 定焦');
+  await page.click('#gAutoToken');
+  await page.waitForTimeout(400);
+  await shoot('09-自定义机型.png');
+  await page.click('#gearSave');
+  await page.waitForTimeout(1200);
+  await page.evaluate(() => [...document.querySelectorAll('#bodyChips .chip')].pop().click());
+  await page.waitForTimeout(900);
+  await shoot('10-自定义机型生效.png');
+
   // 黑白胶片 + 黄金时刻
   await pick('#bodyChips .chip', '徕卡 M6');
   await page.waitForTimeout(450);

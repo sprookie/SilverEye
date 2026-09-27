@@ -57,7 +57,7 @@ class OpenAIImages(Provider):
         "gpt-image-1",
         "gpt-image-1-mini",
         "dall-e-3",
-        # 国内可直达的兼容服务
+        # 兼容同一协议的其它服务
         "doubao-seedream-3-0-t2i-250415",
         "Kwai-Kolors/Kolors",
         "black-forest-labs/FLUX.1-schnell",
@@ -130,7 +130,7 @@ class OpenAIImages(Provider):
         try:
             r = session().get(base + "/models", headers={"Authorization": f"Bearer {key}"}, timeout=25)
         except Exception as e:
-            return {"ok": False, "detail": f"连不上 {base}：{e}\n国内网络访问 OpenAI 官方域名通常需要自建/购买可达的中转 Base URL"}
+            return {"ok": False, "detail": f"连不上 {base}：{e}\n如果这个域名在你的网络下访问不到，把 Base URL 换成可达的中转地址即可"}
         if r.status_code == 200:
             try:
                 ids = [m.get("id", "") for m in r.json().get("data", [])]
@@ -177,13 +177,13 @@ class OpenRouter(Provider):
     """OpenRouter：用 chat/completions + modalities=["image","text"] 出图。
 
     目前能出图的模型不多，主要是 google/gemini-2.5-flash-image（nano banana）。
-    好处是它在国内可达，且一个 key 能横向切模型。
+    好处是一个 key 能横向切多家模型，不用分别去各家申请。
     """
 
     id = "openrouter"
     label = "OpenRouter"
     vendor = "OpenRouter"
-    note = "一个 key 横向切换多家模型，国内可直连。目前出图主力是 google/gemini-2.5-flash-image。"
+    note = "一个 key 横向切换多家模型，不用分别去各家申请。目前出图主力是 google/gemini-2.5-flash-image。"
     docs = "https://openrouter.ai/docs/features/multimodal/image-generation"
     default_base = "https://openrouter.ai/api/v1"
     default_model = "google/gemini-2.5-flash-image-preview"

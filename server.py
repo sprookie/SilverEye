@@ -19,10 +19,12 @@ from __future__ import annotations
 import json
 import os
 import sys
+import threading
 import time
 import uuid
 from pathlib import Path
 from typing import Any
+from urllib.parse import urlparse
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
@@ -125,6 +127,108 @@ def status():
 def providers():
     """生图引擎清单 + 常见服务预设。"""
     return pregistry.catalog()
+
+
+# --------------------------------------------------------------- 连通性探测
+# 刻意不把"哪个服务在哪个国家能不能连通"写死：这是运行环境的事，不是产品的事。
+# 所以改成实测一次并缓存，谁跑这套代码，看到的就是谁自己网络的真实情况。
+#
+# 两个坑都踩过：
+#   1) requests 的 timeout 会被"多 A 记录重试"成倍放大 —— api.openai.com 10 秒、
+#      generativelanguage.googleapis.com 80 秒（16 个地址 × 5s）。
+#      所以这里改成裸 TCP connect，并且只试第一个 IPv4 地址。
+#   2) 探测本身绝不能阻塞接口 —— 改成后台线程刷新，接口永远立刻返回当前快照。
+_REACH: dict[str, Any] = {"at": 0.0, "data": {}, "running": False}
+_REACH_LOCK = threading.Lock()
+REACH_TTL = 600.0          # 秒
+
+
+def _probe_tcp(host: str, port: int = 443, timeout: float = 2.5) -> bool:
+    """能建起 TCP 连接就算网络可达。不看 HTTP 状态，也不做 TLS 握手。"""
+    import socket
+
+    try:
+        infos = socket.getaddrinfo(host, port, socket.AF_INET, socket.SOCK_STREAM)
+    except Exception:
+        return False
+    if not infos:
+        return False
+    af, st, proto, _, sa = infos[0]          # 只试第一个地址，避免被重试拖死
+    s = socket.socket(af, st, proto)
+    s.settimeout(timeout)
+    try:
+        s.connect(sa)
+        return True
+    except Exception:
+        return False
+    finally:
+        try:
+            s.close()
+        except Exception:
+            pass
+
+
+def _refresh_reach() -> None:
+    from concurrent.futures import ThreadPoolExecutor
+
+    hosts = pregistry.preset_hosts()
+    results: dict[str, bool] = {}
+    if hosts:
+        with ThreadPoolExecutor(max_workers=min(8, len(hosts))) as ex:
+            futs = {h: ex.submit(_probe_tcp, h) for h in hosts}
+            for h, f in futs.items():
+                try:
+                    results[h] = bool(f.result(timeout=5.0))
+                except Exception:
+                    results[h] = False
+
+    presets: dict[str, bool] = {}
+    for pr in pregistry.PRESETS:
+        if pr["provider"] == "comfy_qwen":
+            presets[pr["id"]] = qwen_core.comfy_online()
+            continue
+        base = (pr.get("base_url") or "").strip()
+        if not base:
+            continue                                    # 自定义服务没有地址，不做判断
+        presets[pr["id"]] = results.get(urlparse(base).netloc, False)
+
+    _REACH["at"] = time.time()
+    _REACH["data"] = {"hosts": results, "presets": presets}
+
+
+def _start_refresh() -> None:
+    with _REACH_LOCK:
+        if _REACH["running"]:
+            return
+        _REACH["running"] = True
+
+    def run() -> None:
+        try:
+            _refresh_reach()
+        except Exception:
+            pass
+        finally:
+            with _REACH_LOCK:
+                _REACH["running"] = False
+
+    threading.Thread(target=run, daemon=True, name="reach").start()
+
+
+@app.get("/api/reachability")
+def reachability(refresh: int = 0):
+    """返回当前网络到各预设端点的实测结果。
+
+    永远立刻返回：数据可能在后台刷新中，此时 `loading` 为 true，
+    客户端过一两秒再拉一次即可。
+    """
+    stale = (time.time() - _REACH["at"]) > REACH_TTL
+    if refresh or not _REACH["data"] or stale:
+        _start_refresh()
+    return JSONResponse({
+        **_REACH["data"],
+        "checked_at": _REACH["at"],
+        "loading": _REACH["running"],
+    })
 
 
 @app.post("/api/provider/probe")
@@ -313,6 +417,8 @@ def main() -> int:
     ap.add_argument("--host", default="127.0.0.1")
     ap.add_argument("--port", type=int, default=8770)
     a = ap.parse_args()
+
+    _start_refresh()          # 预热：后台先探一次，用户打开面板时通常已有结果
 
     print(f"\n  SilverEye 摄影模拟器  ->  http://{a.host}:{a.port}\n")
     print(f"  ComfyUI   : {qwen_core.COMFY_URL}   ({'在线' if qwen_core.comfy_online() else '未连接'})")

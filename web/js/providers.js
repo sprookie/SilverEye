@@ -20,6 +20,8 @@ window.ENGINEBOX = (function () {
   let active = 'comfy_qwen';
   let configs = {};
   let serverHas = {};          // provider id → bool（服务端是否已存密钥）
+  let reach = {};              // preset id → true/false/undefined（实测连通性）
+  let reachState = 'idle';     // idle | loading | done
   let ready = false;
 
   /* ------------------------------------------------------------ 存取 */
@@ -72,18 +74,58 @@ window.ENGINEBOX = (function () {
     };
   }
 
+  /* ------------------------------------------------------------ 连通性探测
+     "哪个服务能不能连上"取决于运行环境，不该写死在代码里。
+     这里实测一次（服务端后台线程跑、缓存 10 分钟），
+     谁跑这套代码就得到谁自己网络的真实结果。
+     服务端接口永远立刻返回，探测没跑完时会带 loading:true，前端轮询几次即可。 */
+  async function fetchReach(force) {
+    reachState = 'loading';
+    renderPresets();
+    for (let i = 0; i < 8; i++) {
+      try {
+        const url = '/api/reachability' + (force && i === 0 ? '?refresh=1' : '');
+        const j = await (await fetch(url)).json();
+        reach = j.presets || {};
+        if (!j.loading) { reachState = 'done'; break; }
+      } catch (e) {
+        reachState = 'idle';
+        break;
+      }
+      await new Promise((r) => setTimeout(r, 1200));
+    }
+    if (reachState === 'loading') reachState = Object.keys(reach).length ? 'done' : 'idle';
+    renderPresets();
+  }
+
+  function dot(presetId) {
+    if (reachState === 'loading') return ['var(--ink-3)', '检测中…'];
+    const v = reach[presetId];
+    if (v === true) return ['var(--green)', '当前网络实测可达'];
+    if (v === false) return ['var(--red)', '当前网络连不上（可用代理，或直接把 Base URL 换成能访问的地址）'];
+    return ['var(--ink-3)', '未检测'];
+  }
+
   /* ------------------------------------------------------------ 渲染 */
   function renderPresets() {
     const el = $('enginePresets');
     if (!el) return;
-    el.innerHTML = catalog.presets.map((x) => `
-      <button class="chip" data-pid="${esc(x.id)}" title="${esc(x.note)}">
+    el.innerHTML = catalog.presets.map((x) => {
+      const [color, tip] = dot(x.id);
+      return `<button class="chip" data-pid="${esc(x.id)}" title="${esc(x.note)}\n${esc(tip)}">
         <span class="k" style="display:inline-block;width:6px;height:6px;border-radius:50%;margin-right:5px;
-          background:${x.reachable_cn ? 'var(--green)' : 'var(--red)'}"></span>${esc(x.label)}
-      </button>`).join('');
+          background:${color}"></span>${esc(x.label)}
+      </button>`;
+    }).join('');
     el.querySelectorAll('.chip').forEach((b) => {
       b.addEventListener('click', () => applyPreset(b.dataset.pid));
     });
+    const st = $('reachState');
+    if (st) {
+      st.textContent = reachState === 'loading' ? '正在检测当前网络的连通性…'
+        : reachState === 'done' ? '已按当前网络实测'
+          : '尚未检测';
+    }
   }
 
   function applyPreset(pid) {
@@ -94,9 +136,10 @@ window.ENGINEBOX = (function () {
     c.base_url = ps.base_url;
     c.model = ps.model;
     saveLocal(); render();
-    hint(ps.reachable_cn
-      ? `已套用「${ps.label}」，填上密钥即可`
-      : `⚠️ 「${ps.label}」的域名在国内直连不通，建议改用国内可达的服务或自备中转地址`);
+    const v = reach[pid];
+    hint(v === false
+      ? `已套用「${ps.label}」。注意：当前网络连不上这个地址 —— 可以配代理，或直接把 Base URL 改成你能访问的地址。`
+      : `已套用「${ps.label}」，填上密钥即可`);
   }
 
   function renderProviders() {
@@ -338,10 +381,15 @@ window.ENGINEBOX = (function () {
     render();
   }
 
-  function open() { $('engineModal').classList.add('on'); render(); }
+  function open() {
+    $('engineModal').classList.add('on');
+    render();
+    fetchReach(false);            // 打开面板时实测一次（服务端有缓存，几乎无开销）
+  }
   function close() { $('engineModal').classList.remove('on'); }
 
   return { init, open, close, render, probe, saveServer, payload, describe, applyPreset,
+           fetchReach,
            get active() { return active; }, set active(v) { active = v; saveLocal(); render(); },
            get ready() { return ready; } };
 })();

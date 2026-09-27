@@ -492,15 +492,20 @@
         <div class="sect-label">可用引擎</div>
         <div class="engine-list" id="engineList"></div>
 
-        <div class="sect-label" style="margin-top:16px">常用服务（一键填好地址与模型）</div>
+        <div class="sect-label" style="margin-top:16px">
+          常用服务（一键填好地址与模型）
+          <button class="minibtn" id="btnRecheck">重新检测连通性</button>
+        </div>
         <div class="chips" id="enginePresets"></div>
-        <p class="hint" style="margin-top:8px">
-          <b>绿点</b> = 国内可直连；<b>红点</b> = 需要自备可达线路。
+        <p class="hint" id="reachState" style="margin-top:8px"></p>
+        <p class="hint">
+          <b>绿点</b> = 当前网络实测可达；<b>红点</b> = 当前网络连不上（用代理，或把 Base URL 换成你能访问的地址；
+          若服务本身是自建 / 中转，直接改地址即可）。<b>灰点</b> = 未检测。
         </p>
         <p class="hint">
           出图协议其实只有四种：ComfyUI 原生、OpenAI 的 <code>/images/generations</code>、
           Google 的 <code>:generateContent</code>、以及 OpenRouter 的 chat 多模态。
-          国内绝大多数服务（硅基流动 / 火山方舟 / 智谱 / 百炼）都走第一种兼容协议。
+          任何兼容其中之一的服务都能直接接进来。
         </p>
       </div>
 

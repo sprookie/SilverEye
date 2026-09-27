@@ -58,6 +58,14 @@
   color: var(--ink-3); margin-bottom: 9px;
 }
 
+.minibtn {
+  float: right; font-size: 9.5px; letter-spacing: .04em; text-transform: none;
+  color: var(--ink-3); border: 1px solid var(--line); border-radius: 5px;
+  padding: 1px 7px; margin-top: -2px; font-weight: 400;
+  transition: all .16s var(--ease);
+}
+.minibtn:hover { color: var(--amber); border-color: rgba(255,180,61,.4); }
+
 .row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
 .row3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; }
 

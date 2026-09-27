@@ -286,7 +286,7 @@ class Provider:
         except requests.exceptions.RequestException as e:
             raise ProviderError(
                 f"连不上 {self.label}：{redact(e, cfg.get('api_key', ''))}\n"
-                "（若是 OpenAI / Google 官方域名，国内网络通常需要自行配置可达的中转 Base URL）"
+                "（如果这个域名在你的网络下访问不到，把 Base URL 换成可达的中转地址即可）"
             )
 
         try:

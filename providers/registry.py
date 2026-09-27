@@ -1,11 +1,15 @@
 """提供商注册表 + 常见服务预设。
 
-`PRESETS` 是给前端"一键填好"用的：国内可达的服务优先排前面，
-毕竟 OpenAI / Google 官方域名在这台机器上直连不通。
+`PRESETS` 是给前端"一键填好"用的：选好服务，地址和模型名自动填上，
+用户只需要补一个 key。
+
+刻意**不标注哪个服务"在国内能不能连通"** —— 那是运行环境的事，不是产品的事。
+前端会在打开面板时调 `/api/reachability` 实测一次，按当前网络给出真实的绿点/红点。
 """
 from __future__ import annotations
 
 from typing import Any
+from urllib.parse import urlparse
 
 from .base import GenRequest, Provider
 from .comfy_qwen import ComfyQwen
@@ -43,48 +47,47 @@ PROVIDERS: list[Provider] = [
 
 _BY_ID = {p.id: p for p in PROVIDERS}
 
-#: 前端"常用服务"下拉：一键填写 provider / base / model
+#: 前端"常用服务"列表：一键填写 provider / base_url / model
 PRESETS: list[dict[str, Any]] = [
     {"id": "local", "label": "本地 Qwen-Image 2.1（免费）", "provider": "comfy_qwen",
      "base_url": "http://127.0.0.1:8000", "model": "qwen_image_2.1_int8_convrot",
-     "note": "本机 ComfyUI，唯一支持负向提示词与种子的引擎", "reachable_cn": True},
-
-    {"id": "openrouter-nano", "label": "OpenRouter · nano-banana", "provider": "openrouter",
-     "base_url": "https://openrouter.ai/api/v1", "model": "google/gemini-2.5-flash-image-preview",
-     "note": "国内可直连，一个 key 横向切多家模型", "reachable_cn": True},
-    {"id": "openrouter-gptimg", "label": "OpenRouter · gpt-image-1", "provider": "openrouter",
-     "base_url": "https://openrouter.ai/api/v1", "model": "openai/gpt-image-1",
-     "note": "通过 OpenRouter 调用 OpenAI 出图，绕开官方域名", "reachable_cn": True},
-
-    {"id": "siliconflow-kolors", "label": "硅基流动 · Kolors", "provider": "openai_images",
-     "base_url": "https://api.siliconflow.cn/v1", "model": "Kwai-Kolors/Kolors",
-     "note": "国内直连，中文提示词友好，便宜", "reachable_cn": True},
-    {"id": "siliconflow-flux", "label": "硅基流动 · FLUX.1-schnell", "provider": "openai_images",
-     "base_url": "https://api.siliconflow.cn/v1", "model": "black-forest-labs/FLUX.1-schnell",
-     "note": "快、便宜，画质偏插画感", "reachable_cn": True},
-
-    {"id": "volc-seedream", "label": "火山方舟 · 豆包 Seedream", "provider": "openai_images",
-     "base_url": "https://ark.cn-beijing.volces.com/api/v3", "model": "doubao-seedream-3-0-t2i-250415",
-     "note": "国内直连，中文语义理解好", "reachable_cn": True},
-    {"id": "zhipu-cogview", "label": "智谱 · CogView", "provider": "openai_images",
-     "base_url": "https://open.bigmodel.cn/api/paas/v4", "model": "cogview-3-flash",
-     "note": "flash 版本基本免费", "reachable_cn": True},
-    {"id": "dashscope-wanx", "label": "阿里百炼 · 通义万相", "provider": "openai_images",
-     "base_url": "https://dashscope.aliyuncs.com/compatible-mode/v1", "model": "wanx2.1-t2i-turbo",
-     "note": "国内直连，走兼容模式端点", "reachable_cn": True},
+     "note": "本机 ComfyUI，唯一支持负向提示词与固定种子的引擎"},
 
     {"id": "openai-official", "label": "OpenAI 官方", "provider": "openai_images",
      "base_url": "https://api.openai.com/v1", "model": "gpt-image-1",
-     "note": "⚠️ 国内直连不通，需自备可达线路", "reachable_cn": False},
-    {"id": "gemini-official", "label": "Google Gemini 官方（nano-banana）", "provider": "gemini",
+     "note": "gpt-image-1 / dall-e-3，指令跟随最好的商用出图模型之一"},
+    {"id": "gemini-official", "label": "Google Gemini（nano-banana）", "provider": "gemini",
      "base_url": "https://generativelanguage.googleapis.com/v1beta", "model": "gemini-2.5-flash-image",
-     "note": "⚠️ 国内直连不通，需自备可达线路", "reachable_cn": False},
+     "note": "gemini-2.5-flash-image，多模态出口，支持结构化宽高比"},
     {"id": "gemini-imagen", "label": "Google Imagen 4", "provider": "gemini",
      "base_url": "https://generativelanguage.googleapis.com/v1beta", "model": "imagen-4.0-generate-001",
-     "note": "⚠️ 国内直连不通；走 :predict 接口", "reachable_cn": False},
+     "note": "走 :predict 接口，纯文生图，摄影质感更重"},
+
+    {"id": "openrouter-nano", "label": "OpenRouter · nano-banana", "provider": "openrouter",
+     "base_url": "https://openrouter.ai/api/v1", "model": "google/gemini-2.5-flash-image-preview",
+     "note": "一个 key 横向切多家模型，聚合站不用分别申请"},
+    {"id": "openrouter-gptimg", "label": "OpenRouter · gpt-image-1", "provider": "openrouter",
+     "base_url": "https://openrouter.ai/api/v1", "model": "openai/gpt-image-1",
+     "note": "通过聚合站调用 OpenAI 出图"},
+
+    {"id": "siliconflow-kolors", "label": "硅基流动 · Kolors", "provider": "openai_images",
+     "base_url": "https://api.siliconflow.cn/v1", "model": "Kwai-Kolors/Kolors",
+     "note": "中文提示词友好，价格低"},
+    {"id": "siliconflow-flux", "label": "硅基流动 · FLUX.1-schnell", "provider": "openai_images",
+     "base_url": "https://api.siliconflow.cn/v1", "model": "black-forest-labs/FLUX.1-schnell",
+     "note": "出图快、便宜，画质偏插画感"},
+    {"id": "volc-seedream", "label": "火山方舟 · 豆包 Seedream", "provider": "openai_images",
+     "base_url": "https://ark.cn-beijing.volces.com/api/v3", "model": "doubao-seedream-3-0-t2i-250415",
+     "note": "中文语义理解好，尺寸档位丰富"},
+    {"id": "zhipu-cogview", "label": "智谱 · CogView", "provider": "openai_images",
+     "base_url": "https://open.bigmodel.cn/api/paas/v4", "model": "cogview-3-flash",
+     "note": "flash 版本价格极低，适合大量试拍"},
+    {"id": "dashscope-wanx", "label": "阿里百炼 · 通义万相", "provider": "openai_images",
+     "base_url": "https://dashscope.aliyuncs.com/compatible-mode/v1", "model": "wanx2.1-t2i-turbo",
+     "note": "走兼容模式端点，模型更新跟得紧"},
 
     {"id": "custom", "label": "自定义 / 自建 / 中转", "provider": "custom_openai",
-     "base_url": "", "model": "", "note": "自己填 Base URL 与模型名", "reachable_cn": True},
+     "base_url": "", "model": "", "note": "自己填 Base URL 与模型名，任何兼容服务都行"},
 ]
 
 
@@ -104,4 +107,17 @@ def catalog() -> dict[str, Any]:
     }
 
 
-__all__ = ["PROVIDERS", "PRESETS", "get", "catalog", "CustomOpenAI"]
+def preset_hosts() -> dict[str, str]:
+    """预设 id → 要探测连通性的 base_url（去重后只留唯一主机）。"""
+    seen: dict[str, str] = {}
+    for pr in PRESETS:
+        base = (pr.get("base_url") or "").strip()
+        if not base or pr["provider"] == "comfy_qwen":
+            continue
+        host = urlparse(base).netloc
+        if host and host not in seen:
+            seen[host] = base
+    return seen
+
+
+__all__ = ["PROVIDERS", "PRESETS", "get", "catalog", "preset_hosts", "CustomOpenAI"]

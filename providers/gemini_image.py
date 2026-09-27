@@ -5,8 +5,8 @@
      —— 多模态出口，提示词跟随能力强，支持结构化宽高比
   2. `imagen-4.0-*` / `imagen-3.0-*` → `:predict`（纯文生图，质量更"摄影"）
 
-注意：`generativelanguage.googleapis.com` 在国内直连不通，
-需要在「Base URL」里填一个可达的中转地址。
+默认走 `generativelanguage.googleapis.com`。如果你的网络访问不到它，
+在「Base URL」里填一个可达的中转地址即可（接口路径保持不变）。
 """
 from __future__ import annotations
 
@@ -128,7 +128,7 @@ class GeminiImage(Provider):
         try:
             r = session().get(base + "/models", headers={"x-goog-api-key": key}, timeout=25)
         except Exception as e:
-            return {"ok": False, "detail": f"连不上 {base}：{e}\n国内直连 generativelanguage.googleapis.com 不通，请在 Base URL 填一个可达的中转地址"}
+            return {"ok": False, "detail": f"连不上 {base}：{e}\n如果这个域名在你的网络下访问不到，把 Base URL 换成可达的中转地址即可"}
         if r.status_code != 200:
             try:
                 j = r.json()

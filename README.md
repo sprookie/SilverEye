@@ -41,19 +41,24 @@ ComfyUI + `qwen_image_2.1_int8_convrot` 三件套（unet / clip / vae）。
 顶栏中间的按钮可以切换出图后端。**协议其实只有四种**，
 所以一个适配器就能覆盖一大票服务：
 
-| 引擎 | 协议 | 负向提示词 | 固定种子 | 国内直连 |
-|---|---|---|---|---|
-| **本地 Qwen-Image 2.1**（默认） | ComfyUI 原生 | ✅ | ✅ | ✅ 免费 |
-| **OpenRouter** | chat + `modalities:["image"]` | — | — | ✅ |
-| **OpenAI Images** | `POST /images/generations` | — | — | ❌ 需中转 |
-| **Google Gemini / Imagen** | `:generateContent` / `:predict` | — | — | ❌ 需中转 |
-| **自定义（OpenAI 兼容）** | 同上第一条 | — | — | ✅ 自建 |
+| 引擎 | 协议 | 负向提示词 | 固定种子 |
+|---|---|---|---|
+| **本地 Qwen-Image 2.1**（默认） | ComfyUI 原生 | ✅ | ✅ |
+| **OpenRouter** | chat + `modalities:["image"]` | — | — |
+| **OpenAI Images** | `POST /images/generations` | — | — |
+| **Google Gemini / Imagen** | `:generateContent` / `:predict` | — | — |
+| **自定义（OpenAI 兼容）** | 同 OpenAI 那条 | — | — |
 
-内置 12 个**一键预设**，其中标注了国内可达性：
+内置 12 个**一键预设**：OpenAI、Google Gemini（nano-banana）/ Imagen、
+OpenRouter、硅基流动 Kolors / FLUX、火山方舟 Seedream、智谱 CogView、阿里百炼万相。
 
-- 🟢 硅基流动 Kolors / FLUX.1-schnell、火山方舟豆包 Seedream、智谱 CogView、阿里百炼万相
-- 🟢 OpenRouter（nano-banana / gpt-image-1）
-- 🔴 OpenAI 官方、Google Gemini 官方、Imagen 4
+> 国内还有一堆服务兼容 OpenAI 的 `/images/generations`，**全都能直接接进来** ——
+> 只要它符合四种协议之一，选「自定义」把 Base URL 填上就行。
+
+**连通性由运行时实测，不写死在代码里。**
+打开面板时会调 `/api/reachability`，对本机到各预设端点的网络做一次真实探测
+（任何 HTTP 响应都算可达，服务端缓存 10 分钟），绿点 / 红点 / 灰点就是**你这台机器**的真实结果。
+连不上也不影响使用 —— 配代理，或者直接把 Base URL 换成你能访问的地址。
 
 **引擎能力差异会被自动降级处理**，不会因为参数对不上就报错：
 
@@ -218,7 +223,8 @@ OpenAI 兼容端点查 `/models`，Gemini 查 `/models`，OpenRouter 查 `/key`
 ```
 photo-sim/
 ├── server.py                 FastAPI：静态托管 + /api/shot + /api/providers
-│                             + /api/provider/probe + /api/config + /api/gallery
+│                             + /api/reachability + /api/provider/probe
+│                             + /api/config + /api/gallery
 ├── qwen_core.py              直连 ComfyUI 的生图核心（绕过系统代理）
 ├── providers/                ★ 多厂商生图适配层
 │   ├── base.py               能力声明 / 尺寸吸附 / 负向降级 / 密钥脱敏 / 错误中文化

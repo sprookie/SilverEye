@@ -827,6 +827,7 @@
     });
     $('btnProbe').addEventListener('click', () => window.ENGINEBOX.probe());
     $('btnSaveEngine').addEventListener('click', () => window.ENGINEBOX.saveServer());
+    $('btnRecheck').addEventListener('click', () => window.ENGINEBOX.fetchReach(true));
 
     /* ---------- 自定义机型 ---------- */
     $('btnNewBody').addEventListener('click', () => window.CUSTOMGEAR.openEditor(null));
