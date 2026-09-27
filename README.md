@@ -1,5 +1,7 @@
 # SilverEye · 沉浸式摄影模拟器
 
+> 仓库：<https://github.com/sprookie/SilverEye>
+
 一个"拿在手里"的摄影模拟器：你调机身、换镜头、拧光圈、拨快门、卷胶片，
 取景器会**实时**按真实光学公式重新模拟画面，按下快门后由 Qwen-Image 2.1
 把你这一整套参数"翻译"成一张照片。
@@ -14,9 +16,11 @@
 ## 快速开始
 
 ```bash
+git clone https://github.com/sprookie/SilverEye.git
+cd SilverEye
+
 # 1. 先确保 ComfyUI 在跑（默认 127.0.0.1:8000，已加载 Qwen-Image 2.1 权重）
 # 2. 双击 start.bat，或者：
-cd photo-sim
 F:\.venv\Scripts\python.exe server.py
 
 # 3. 浏览器打开 http://127.0.0.1:8770
@@ -24,6 +28,9 @@ F:\.venv\Scripts\python.exe server.py
 
 要求：Python 3.10+、`fastapi` / `uvicorn` / `requests`；
 ComfyUI + `qwen_image_2.1_int8_convrot` 三件套（unet / clip / vae）。
+
+> 仓库里已经带了 33 张场景底图和 6 张演示作品，clone 下来就能直接用。
+> 想换一套场景底图跑 `scripts/seed_scenes.py` 重新生成即可。
 
 ---
 
